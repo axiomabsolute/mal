@@ -27,13 +27,13 @@ class Symbol:
 
 class Keyword:
   def __init__(self, token):
-    self.token = token
+    self.token = token[1:]
 
-  def __str__(self):
-    return self.token
+  # def __str__(self):
+  #   return self.token
 
-  def __repr__(self):
-    return self.token
+  # def __repr__(self):
+  #   return repr(self.token)
 
 def read_str(inp):
   tokens = tokenizer(inp)
@@ -42,6 +42,8 @@ def read_str(inp):
 
 def tokenizer(inp):
   tokens = token_pcre.findall(inp)
+  if tokens[0].startswith(";"):
+    return []
   return tokens
 
 def read_form(reader):
@@ -99,6 +101,7 @@ def read_atom(reader):
   else:
     return (parse_int(curr_token) or
               parse_string(curr_token) or
+              parse_keyword(curr_token) or
               Symbol(curr_token))
 
 def parse_int(inp):
@@ -109,5 +112,10 @@ def parse_int(inp):
 
 def parse_string(inp):
   if inp.startswith("\"") and inp.endswith("\""):
-    return inp
+    return inp[1:-1]
+  return None
+
+def parse_keyword(inp):
+  if inp.startswith(":"):
+    return Keyword(inp)
   return None

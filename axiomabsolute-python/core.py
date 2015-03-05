@@ -4,7 +4,7 @@ def prelude():
     '-': lambda a,b: a-b,
     '*': lambda a,b: a*b,
     '/': lambda a,b: int(a/b),
-    'list': lambda *args: args,
+    'list': lambda *args: list(args),
     'list?': lambda x, *args: isinstance(x, list),
     'empty?': lambda x, *args: len(x) == 0,
     '=': lambda x,y: x == y,

@@ -4,6 +4,7 @@ import printer
 import env as environment
 from itertools import izip
 from core import prelude
+import logging
 
 class Mal(cmd.Cmd):
   """Command line interpreter for the Mal programming language"""
@@ -11,6 +12,8 @@ class Mal(cmd.Cmd):
   def __init__(self):
     self.prompt = "(mal) "
     self.repl_env = environment.Env(None, prelude())
+    logging.basicConfig(format='  <%(levelname)s>\t%(message)s')
+    self._logger = logging.getLogger()
     cmd.Cmd.__init__(self)
 
   def do_EOF(self, params):
@@ -23,10 +26,16 @@ class Mal(cmd.Cmd):
     return reader.read_str(param)
 
   def eval_ast(self, ast, env):
+    if isinstance(ast, reader.Keyword):
+      return ast.token
     if isinstance(ast, reader.Symbol):
       return env.get(ast.token)
     if isinstance(ast, list):
       return [self.EVAL(a, env) for a in ast]
+    if isinstance(ast, tuple):
+      return tuple([self.EVAL(a,env) for a in ast])
+    if isinstance(ast, dict):
+      return {self.EVAL(k, env):self.EVAL(v, env) for k,v in ast.iteritems()}
     return ast
 
   def EVAL(self, ast, env):
@@ -58,11 +67,21 @@ class Mal(cmd.Cmd):
           else:
             return None
         if ast[0].token == "fn*":
+          logging.debug("Special form: fn*")
           return lambda *args: self.EVAL(ast[2], environment.Env(env, binds=[x.token for x in ast[1]], exprs=args))
+      if isinstance(ast[0], reader.Keyword):
+        if isinstance(ast[1], dict):
+          key = self.eval_ast(ast[0], env)
+          dics = [self.eval_ast(x, env) for x in ast[1:]]
+          res = [dic[key] if key in dic else None for dic in dics]
+          if len(res) == 1:
+            return res[0]
+          return res
+          return None
+        return None
       prep = self.eval_ast(ast, env)
       return self.apply(prep)
-    else:
-      return self.eval_ast(ast, env)
+    return self.eval_ast(ast, env)
 
   def apply(self, sexp):
     return sexp[0](*sexp[1:])
@@ -71,7 +90,10 @@ class Mal(cmd.Cmd):
     return printer.pr_str(param)
 
   def do_rep(self, param):
-    print(self.PRINT(self.EVAL(self.READ(param), self.repl_env)))
+    try:
+      print(self.PRINT(self.EVAL(self.READ(param), self.repl_env)))
+    except Exception as e:
+      print(e)
 
   def do_printenv(self, param):
     print(self.repl_env)
@@ -79,6 +101,23 @@ class Mal(cmd.Cmd):
   def default(self, line):
     return self.do_rep(line)
 
+  def do_debug(self, param):
+    logger = self._logger
+    if param == None:
+      if logger.getEffectiveLevel() == logging.DEBUG:
+        logger.setLevel(logging.WARNING)
+      else:
+        logger.setLevel(logging.DEBUG)
+    else:
+      if bool(param):
+        logger.setLevel(logging.DEBUG)
+      else:
+        logger.setLevel(logging.WARNING)
+    print("DEBUG MODE: %s" % (logger.getEffectiveLevel() == logging.DEBUG))
+
 if __name__ == "__main__":
-  Mal().cmdloop()
+  mal = Mal()
+  garbage = mal.do_rep("(def! not (fn* (a) (if a false true)))")
+  # garbage = mal.do_debug(None)
+  mal.cmdloop()
   print("DONE")

@@ -5,6 +5,8 @@ def pr_str(mal):
     return'(' + ' '.join([pr_str(x) for x in mal]) + ')'
   elif isinstance(mal, tuple):
     return '[' + ' '.join([pr_str(x) for x in mal]) + ']'
+  elif isinstance(mal, str):
+    return ('"%s"' % mal)
   elif mal == None:
     return 'nil'
   elif mal == True:

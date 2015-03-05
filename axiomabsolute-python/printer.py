@@ -9,9 +9,10 @@ def pr_str(mal):
     return ('"%s"' % mal)
   elif mal == None:
     return 'nil'
-  elif mal == True:
-    return 'true'
-  elif mal == False:
-    return 'false'
+  elif isinstance(mal, bool):
+    if mal == true:
+      return 'true'
+    else:
+      return 'false'
   else:
     return repr(mal)

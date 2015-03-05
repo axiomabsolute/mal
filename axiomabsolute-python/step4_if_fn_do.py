@@ -10,7 +10,7 @@ class Mal(cmd.Cmd):
   """Command line interpreter for the Mal programming language"""
 
   def __init__(self):
-    self.prompt = "(mal) "
+    self.prompt = "mal-user> "
     self.repl_env = environment.Env(None, prelude())
     logging.basicConfig(format='  <%(levelname)s>\t%(message)s')
     self._logger = logging.getLogger()

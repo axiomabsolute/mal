@@ -6,7 +6,7 @@ class Mal(cmd.Cmd):
   """Command line interpreter for the Mal programming language"""
 
   def __init__(self):
-    self.prompt = "(mal) "
+    self.prompt = "mal-user> "
     self.repl_env = {
       '+': lambda a,b: a+b,
       '-': lambda a,b: a-b,

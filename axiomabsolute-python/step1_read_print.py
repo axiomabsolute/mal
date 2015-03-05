@@ -6,7 +6,7 @@ class Mal(cmd.Cmd):
   """Command line interpreter for the Mal programming language"""
 
   def __init__(self):
-    self.prompt = "(mal) "
+    self.prompt = "mal-user> "
     cmd.Cmd.__init__(self)
 
   def do_EOF(self, params):

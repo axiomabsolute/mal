@@ -28,7 +28,10 @@ class Mal(cmd.Cmd):
     print(self.PRINT(self.EVAL(self.READ(param))))
 
   def default(self, line):
-    return self.do_rep(line)
+    try:
+      return self.do_rep(line)
+    except Exception as e:
+      print(e)
 
 if __name__ == "__main__":
   Mal().cmdloop()

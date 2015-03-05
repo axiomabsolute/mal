@@ -27,11 +27,6 @@ class Mal(cmd.Cmd):
     return printer.pr_str(param)
 
   def do_rep(self, param):
-    readres = self.READ(param)
-    print(readres)
-    evalres = self.EVAL(readres)
-    print(evalres)
-    printres = self.PRINT(evalres)
     print(self.PRINT(self.EVAL(self.READ(param))))
 
   def default(self, line):

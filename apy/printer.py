@@ -11,7 +11,6 @@ def pr_str(mal):
     return 'nil'
   elif isinstance(mal, bool):
     if mal == True:
-      print("It's true!")
       return 'true'
     else:
       return 'false'

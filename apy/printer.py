@@ -10,7 +10,8 @@ def pr_str(mal):
   elif mal == None:
     return 'nil'
   elif isinstance(mal, bool):
-    if mal == true:
+    if mal == True:
+      print("It's true!")
       return 'true'
     else:
       return 'false'

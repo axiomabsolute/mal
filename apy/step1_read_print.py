@@ -1,6 +1,8 @@
 import cmd
 import reader
 import printer
+import sys
+import traceback
 
 class Mal(cmd.Cmd):
   """Command line interpreter for the Mal programming language"""
@@ -25,13 +27,18 @@ class Mal(cmd.Cmd):
     return printer.pr_str(param)
 
   def do_rep(self, param):
+    readres = self.READ(param)
+    print(readres)
+    evalres = self.EVAL(readres)
+    print(evalres)
+    printres = self.PRINT(evalres)
     print(self.PRINT(self.EVAL(self.READ(param))))
 
   def default(self, line):
     try:
       return self.do_rep(line)
     except Exception as e:
-      print(e)
+      print("".join(traceback.format_exception(*sys.exc_info())))
 
 if __name__ == "__main__":
   Mal().cmdloop()

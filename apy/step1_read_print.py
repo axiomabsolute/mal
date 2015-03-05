@@ -30,8 +30,6 @@ class Mal(cmd.Cmd):
   def default(self, line):
     return self.do_rep(line)
 
-Mal().cmdloop()
-
-# if __name__ == "__main__":
-#   Mal().cmdloop()
-#   print("DONE")
+if __name__ == "__main__":
+  Mal().cmdloop()
+  print("DONE")

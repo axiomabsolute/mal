@@ -1,6 +1,6 @@
 import re
 
-token_pcre = re.compile("""[\s,]*(~@|[\[\]{}()'`~^@]|"(?:\\.|[^\\"])*"|;.*|[^\s\[\]{}('"`,;)]*)""")
+token_pcre = re.compile(r"""[\s,]*(~@|[\[\]{}()'`~^@]|"(?:[\\].|[^\\"])*"|;.*|[^\s\[\]{}()'"`@,;]+)""")
 
 class Reader:
   def __init__(self, tokens):
@@ -20,7 +20,7 @@ class Symbol:
     self.token = token
 
   def __str__(self):
-    return self.token
+    return "Symbol(%s)" % self.token
 
   def __repr__(self):
     return self.token
@@ -91,7 +91,6 @@ def read_map(reader):
 
 def read_atom(reader):
   curr_token = reader.next()
-  res = parse_int(curr_token)
   if curr_token == "true":
     return True
   elif curr_token == "false":
@@ -99,16 +98,30 @@ def read_atom(reader):
   elif curr_token == "nil":
     return None
   else:
-    return (parse_int(curr_token) or
-              parse_string(curr_token) or
-              parse_keyword(curr_token) or
-              Symbol(curr_token))
+    return parse_atom(curr_token, [parse_int,
+              parse_float,
+              parse_string,
+              parse_keyword,
+              lambda inp: Symbol(inp)])
+
+def parse_atom(inp, parsers):
+  for parser in parsers:
+    res = parser(inp)
+    if res != None:
+      return res
 
 def parse_int(inp):
   try:
+    res = int(inp)
     return int(inp)
   except Exception:
     return None
+
+def parse_float(inp):
+  try:
+    return float(inp)
+  except Exception:
+    None
 
 def parse_string(inp):
   if inp.startswith("\"") and inp.endswith("\""):

@@ -1,6 +1,8 @@
 import cmd
 import reader
 import printer
+import sys
+import traceback
 import env as environment
 from itertools import izip
 
@@ -38,7 +40,9 @@ class Mal(cmd.Cmd):
       if len(ast) == 0:
         return
       elif isinstance(ast[0], reader.Symbol) and ast[0].token == "def!":
-        return env.set(ast[1].token, self.EVAL(ast[2], env))
+        value = self.EVAL(ast[2], env)
+        env.set(ast[1].token, value)
+        return value
       elif isinstance(ast[0], reader.Symbol) and ast[0].token == "let*":
         let_env = environment.Env(env)
         pairs = izip(*[iter(ast[1])]*2)
@@ -46,8 +50,12 @@ class Mal(cmd.Cmd):
           let_env.set(pair[0].token, self.EVAL(pair[1], let_env))
         return self.EVAL(ast[2], let_env)
       else:
-        prep = self.eval_ast(ast, self.repl_env)
+        prep = self.eval_ast(ast, env)
         return self.apply(prep)
+    elif isinstance(ast, tuple):
+      return tuple([self.EVAL(x, env) for x in ast])
+    elif isinstance(ast, dict):
+      return {k:self.EVAL(v, env) for (k,v) in ast.iteritems()}
     else:
       return self.eval_ast(ast, env)
 
@@ -64,7 +72,10 @@ class Mal(cmd.Cmd):
     print(self.repl_env)
 
   def default(self, line):
-    return self.do_rep(line)
+    try:
+      return self.do_rep(line)
+    except Exception as e:
+      print("".join(traceback.format_exception(*sys.exc_info())))
 
 if __name__ == "__main__":
   Mal().cmdloop()

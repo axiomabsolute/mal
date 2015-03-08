@@ -1,3 +1,5 @@
+from reader import Keyword
+
 def pr_str(mal):
   # If it's a list, map str over elements, join with spaces and surround parens
   # Otherwise just str it.
@@ -14,5 +16,9 @@ def pr_str(mal):
       return 'true'
     else:
       return 'false'
+  elif isinstance(mal, Keyword):
+    return ":" + mal.token
+  elif isinstance(mal, dict):
+    return "{%s}" % (" ".join(["%s %s" % (pr_str(k),pr_str(v)) for k,v in mal.iteritems()]))
   else:
     return repr(mal)

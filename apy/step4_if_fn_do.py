@@ -1,6 +1,8 @@
 import cmd
 import reader
 import printer
+import sys
+import traceback
 import env as environment
 from itertools import izip
 from core import prelude
@@ -60,12 +62,12 @@ class Mal(cmd.Cmd):
           return last
         if ast[0].token == "if":
           cond = self.EVAL(ast[1], env)
-          if cond != None and cond != False:
-            return self.EVAL(ast[2], env)
-          elif len(ast) == 4:
-            return self.EVAL(ast[3], env)
-          else:
+          if cond == None or (isinstance(cond, bool) and cond == False):
+            if len(ast) == 4:
+              return self.EVAL(ast[3], env)
             return None
+          else:
+            return self.EVAL(ast[2], env)
         if ast[0].token == "fn*":
           logging.debug("Special form: fn*")
           return lambda *args: self.EVAL(ast[2], environment.Env(env, binds=[x.token for x in ast[1]], exprs=args))
@@ -90,16 +92,16 @@ class Mal(cmd.Cmd):
     return printer.pr_str(param)
 
   def do_rep(self, param):
-    try:
-      print(self.PRINT(self.EVAL(self.READ(param), self.repl_env)))
-    except Exception as e:
-      print(e)
+    print(self.PRINT(self.EVAL(self.READ(param), self.repl_env)))
 
   def do_printenv(self, param):
     print(self.repl_env)
 
   def default(self, line):
-    return self.do_rep(line)
+    try:
+      return self.do_rep(line)
+    except Exception as e:
+      print("".join(traceback.format_exception(*sys.exc_info())))
 
   def do_debug(self, param):
     logger = self._logger

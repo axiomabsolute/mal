@@ -1,15 +1,15 @@
 import cmd
 import reader
 import printer
+import sys
+import traceback
 import env as environment
 from itertools import izip
 from core import prelude
+from reader import Symbol
 import logging
-import collections
 
-## Eh.  TCO didn't go as planned.  Clean up step4 first?
-
-class fnStar:
+class Fn:
   def __init__(self, fn, ast, params, env):
     self.fn = fn
     self.ast = ast
@@ -38,17 +38,15 @@ class Mal(cmd.Cmd):
   def eval_ast(self, ast, env):
     if isinstance(ast, reader.Keyword):
       return ast.token
-    elif isinstance(ast, reader.Symbol):
-      print("itsa symbol")
-      print(env.get(ast.token))
+    if isinstance(ast, reader.Symbol):
       return env.get(ast.token)
-    elif isinstance(ast, list):
+    if isinstance(ast, list):
       return [self.EVAL(a, env) for a in ast]
-    elif isinstance(ast, tuple):
-      return tuple([self.EVAL(a, env) for a in ast])
-    elif isinstance(ast, dict):
+    if isinstance(ast, tuple):
+      return tuple([self.EVAL(a,env) for a in ast])
+    if isinstance(ast, dict):
       return {self.EVAL(k, env):self.EVAL(v, env) for k,v in ast.iteritems()}
-    raise Exception("What what.")
+    return ast
 
   def EVAL(self, ast, env):
     while True:
@@ -59,8 +57,7 @@ class Mal(cmd.Cmd):
         # Find a cleaner way to do this :(
         if isinstance(ast[0], reader.Symbol):
           if ast[0].token == "def!":
-            env.set(ast[1].token, self.EVAL(ast[2], env))
-            continue
+            return env.set(ast[1].token, self.EVAL(ast[2], env))
           if ast[0].token == "let*":
             let_env = environment.Env(env)
             pairs = izip(*[iter(ast[1])]*2)
@@ -70,24 +67,26 @@ class Mal(cmd.Cmd):
             ast = ast[2]
             continue
           if ast[0].token == "do":
+            last = None
             for item in ast[1:-1]:
-              self.eval_ast(item, env)
+              last = self.EVAL(item, env)
             ast = ast[-1]
             continue
           if ast[0].token == "if":
             cond = self.EVAL(ast[1], env)
-            if cond != None and cond != False:
-              ast = ast[2]
-              continue
-            elif len(ast) == 4:
-              ast = ast[3]
+            if cond == None or (isinstance(cond, bool) and cond == False):
+              if len(ast) == 4:
+                ast = ast[3]
+                continue
+              ast = None
               continue
             else:
-              ast = None
+              ast = ast[2]
               continue
           if ast[0].token == "fn*":
             logging.debug("Special form: fn*")
-            return fnStar(ast=ast[2], params=ast[1], env=env, fn=lambda *args: self.EVAL(ast[2], environment.Env(env, binds=[x.token for x in ast[1]], exprs=args)))
+            fn = lambda *args: self.EVAL(ast[2], environment.Env(env, binds=[x.token for x in ast[1]], exprs=args))
+            return Fn(fn, ast[2], ast[1], env)
         if isinstance(ast[0], reader.Keyword):
           if isinstance(ast[1], dict):
             key = self.eval_ast(ast[0], env)
@@ -98,21 +97,15 @@ class Mal(cmd.Cmd):
             return res
             return None
           return None
-        # If regular function:
         prep = self.eval_ast(ast, env)
-        if isinstance(prep[0], collections.Callable):
-          return self.apply(prep)
-        # Else it's an fn* function
-        else:
+        if isinstance(prep[0], Fn):
           fnstar = prep[0]
           ast = fnstar.ast
-          env = environment.Env(outer=fnstar.env, binds=fnstar.params, exprs=prep[1:])
-          print(fnstar.env)
-          print(fnstar.ast)
-          print(fnstar.params)
-          print(prep[1:])
-      self.eval_ast(ast, env)
-      return
+          env = environment.Env(outer=fnstar.env, binds=[x.token for x in fnstar.params], exprs=prep[1:])
+          continue
+        else:
+          return self.apply(prep)
+      return self.eval_ast(ast, env)
 
   def apply(self, sexp):
     return sexp[0](*sexp[1:])
@@ -121,16 +114,16 @@ class Mal(cmd.Cmd):
     return printer.pr_str(param)
 
   def do_rep(self, param):
-    try:
-      print(self.PRINT(self.EVAL(self.READ(param), self.repl_env)))
-    except Exception as e:
-      print(e)
+    print(self.PRINT(self.EVAL(self.READ(param), self.repl_env)))
 
   def do_printenv(self, param):
     print(self.repl_env)
 
   def default(self, line):
-    return self.do_rep(line)
+    try:
+      return self.do_rep(line)
+    except Exception as e:
+      print("".join(traceback.format_exception(*sys.exc_info())))
 
   def do_debug(self, param):
     logger = self._logger
@@ -148,7 +141,7 @@ class Mal(cmd.Cmd):
 
 if __name__ == "__main__":
   mal = Mal()
-  #garbage = mal.do_rep("(def! not (fn* (a) (if a false true)))")
-  #garbage = mal.do_debug(None)
+  garbage = mal.do_rep("(def! not (fn* (a) (if a false true)))")
+  # garbage = mal.do_debug(None)
   mal.cmdloop()
   print("DONE")

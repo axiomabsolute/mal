@@ -17,7 +17,7 @@ class Mal(cmd.Cmd):
   def do_exit(self, params):
     return self.do_EOF(params)
 
-  def READ(self, param):
+  def READ(self, param):``````
     return reader.read_str(param)
 
   def EVAL(self, param):
